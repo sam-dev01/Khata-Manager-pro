@@ -284,7 +284,7 @@ const WhatsAppManager = ({ customers = [], transactions = [], setCustomers, lang
       balance: customer.balance,
       last_payment_date: customer.lastTxnDateStr,
       shop_name: localStorage.getItem('current_shop_name') || 'My Shop',
-      payment_link: `https://shopapp.studydost.in/invoice/view/${customer.id}`
+      payment_link: `https://shop.kimiclaw.in/invoice/view/${customer.id}`
     });
   }, [customMessage]);
 
