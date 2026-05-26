@@ -6,7 +6,7 @@
 // Vowels (Independent)
 const VOWELS = {
     'a': 'अ', 'aa': 'आ', 'i': 'इ', 'ii': 'ई', 'ee': 'ई', 'u': 'उ', 'uu': 'ऊ', 'oo': 'ऊ',
-    'e': 'ए', 'ai': 'ऐ', 'o': 'ओ', 'au': 'औ', 'an': 'अं', 'ah': 'अः', 'r': 'ऋ'
+    'e': 'ए', 'ai': 'ऐ', 'o': 'ओ', 'au': 'औ', 'r': 'ऋ'
 };
 
 // Matras (Dependent Vowels) - applied to consonants
@@ -21,8 +21,7 @@ const MATRAS = {
     'ai': 'ै',
     'o': 'ो',
     'au': 'ौ',
-    'an': 'ं',
-    'ah': 'ः'
+    'r': 'ृ'
 };
 
 // Consonants
@@ -177,6 +176,7 @@ export const smartTransliterate = (str) => {
 
     // Custom dictionary overrides for common names
     const DICTIONARY = {
+        // Surnames / Titles
         'sharma': 'शर्मा',
         'verma': 'वर्मा',
         'gupta': 'गुप्ता',
@@ -196,7 +196,61 @@ export const smartTransliterate = (str) => {
         'joshi': 'जोशी',
         'rawat': 'रावत',
         'bhai': 'भाई',
-        'ji': 'जी'
+        'ji': 'जी',
+
+        // Common Names
+        'shivam': 'शिवम',
+        'amit': 'अमित',
+        'rahul': 'राहुल',
+        'raj': 'राज',
+        'aman': 'अमन',
+        'ramesh': 'रमेश',
+        'sanjay': 'संजय',
+        'anil': 'अनिल',
+        'sunil': 'सुनील',
+        'vijay': 'विजय',
+        'ajay': 'अजय',
+        'deepak': 'दीपक',
+        'sandeep': 'संदीप',
+        'manoj': 'मनोज',
+        'rajesh': 'राजेश',
+        'dinesh': 'दिनेश',
+        'suresh': 'सुरेश',
+        'kamal': 'कमल',
+        'pawan': 'पवन',
+        'vikas': 'विकास',
+        'abhishek': 'अभिषेक',
+        'rohit': 'रोहित',
+        'rahim': 'रहीम',
+        'anand': 'आनंद',
+        'arvind': 'अरविंद',
+        'ashok': 'अशोक',
+        'harish': 'हरीश',
+        'kishore': 'किशोर',
+        'lalit': 'ललित',
+        'mohan': 'मोहन',
+        'sohan': 'सोहन',
+        'ravi': 'रवि',
+        'pradeep': 'प्रदीप',
+        'prakash': 'प्रकाश',
+        'prem': 'प्रेम',
+        'ram': 'राम',
+        'shyam': 'श्याम',
+        'vinod': 'विनोद',
+        'kapil': 'कपिल',
+        'arun': 'अरुण',
+        'santosh': 'संतोष',
+        'ashish': 'आशीष',
+        'vivek': 'विवेक',
+        'karan': 'करण',
+        'vikram': 'विक्रम',
+
+        // Local Locations / Villages / Regions
+        'sleemnabad': 'सलीमनबाद',
+        'katni': 'कटनी',
+        'jabalpur': 'जबलपुर',
+        'madhya': 'मध्य',
+        'pradesh': 'प्रदेश'
     };
 
     // Check whole word dictionary first (case insensitive)
