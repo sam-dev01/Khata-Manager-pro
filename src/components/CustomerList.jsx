@@ -386,7 +386,13 @@ const CustomerList = ({
                   prefix={<UserOutlined style={{ color: '#1890ff' }} />}
                   onChange={(e) => {
                     const englishName = e.target.value;
-                    if (englishName) {
+                    if (!englishName) {
+                      form.setFieldsValue({ nameHi: '' });
+                      return;
+                    }
+                    const isTouched = form.isFieldTouched('nameHi');
+                    const hasExistingHiVal = form.getFieldValue('nameHi');
+                    if ((!editingCustomer && !isTouched) || !hasExistingHiVal) {
                       form.setFieldsValue({
                         nameHi: transliterateToHindi(englishName)
                       });
