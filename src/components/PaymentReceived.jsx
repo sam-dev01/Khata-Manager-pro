@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Select, Input, Button, message, Space, Tag, Statistic, Row, Col } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, Select, Input, Button, message, Space, Tag, Statistic, Row, Col, List, Checkbox, Typography } from 'antd';
 import { DollarOutlined, CheckCircleOutlined, UserOutlined } from '@ant-design/icons';
 import { getTodayTransactions, calculateBalance } from '../utils/calculations';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
+const { Text } = Typography;
 
-const PaymentReceived = ({ customers, transactions, setTransactions }) => {
+const PaymentReceived = ({ customers, transactions, setTransactions, promises = [], setPromises }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
   const [amount, setAmount] = useState('');
   const [paymentType, setPaymentType] = useState('cash');
+  const [selectedPromiseIds, setSelectedPromiseIds] = useState([]);
 
   // Calculate balances
   const customersWithBalance = customers
@@ -16,6 +19,28 @@ const PaymentReceived = ({ customers, transactions, setTransactions }) => {
     .filter(c => c.balance > 0);
 
   const selectedCustomer = customersWithBalance.find(c => c.id === selectedCustomerId);
+
+  // Clear selections when customer shifts
+  useEffect(() => {
+    setSelectedPromiseIds([]);
+  }, [selectedCustomerId]);
+
+  // Retrieve pending promises for this customer
+  const pendingPromises = useMemo(() => {
+    if (!selectedCustomerId) return [];
+    return promises.filter(p => p.customerId === selectedCustomerId && p.status === 'pending');
+  }, [selectedCustomerId, promises]);
+
+  // Intelligent auto-match based on input amount
+  useEffect(() => {
+    const enteredAmt = parseFloat(amount) || 0;
+    if (enteredAmt > 0 && pendingPromises.length > 0) {
+      const exactMatch = pendingPromises.find(p => p.amount === enteredAmt);
+      if (exactMatch) {
+        setSelectedPromiseIds([exactMatch.id]);
+      }
+    }
+  }, [amount, pendingPromises]);
 
   const handleSubmit = () => {
     if (!selectedCustomer) {
@@ -48,6 +73,17 @@ const PaymentReceived = ({ customers, transactions, setTransactions }) => {
 
     setTransactions([transaction]);
     message.success(`✅ Received ₹${amountNum}`);
+
+    // Dynamic Promise Reconciliation
+    if (selectedPromiseIds.length > 0 && setPromises) {
+      const updated = promises.map(p =>
+        selectedPromiseIds.includes(p.id)
+          ? { ...p, status: 'completed', completedAt: Date.now() }
+          : p
+      );
+      setPromises(updated);
+      message.success(`Reconciled ${selectedPromiseIds.length} payment promise(s)`);
+    }
 
     setSelectedCustomerId(null);
     setAmount('');
@@ -95,6 +131,11 @@ const PaymentReceived = ({ customers, transactions, setTransactions }) => {
             size="large"
             style={{ width: '100%' }}
             placeholder="Choose customer"
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
+            }
           >
             {customersWithBalance.map(c => (
               <Option key={c.id} value={c.id}>
@@ -108,6 +149,40 @@ const PaymentReceived = ({ customers, transactions, setTransactions }) => {
           <div style={{ padding: 16, background: '#fff7e6', borderRadius: 8, marginBottom: 16 }}>
             <div><strong>Customer:</strong> {selectedCustomer.name}</div>
             <div><strong>Outstanding:</strong> <Tag color="error" style={{ fontSize: 18 }}>₹{selectedCustomer.balance}</Tag></div>
+
+            {/* Reconciliation Widget */}
+            {pendingPromises.length > 0 && (
+              <div style={{ marginTop: 12, padding: 12, background: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: 8 }}>
+                <div style={{ fontWeight: 'bold', color: '#1d39c4', marginBottom: 8 }}>📅 Pending Promises Found:</div>
+                <List
+                  size="small"
+                  dataSource={pendingPromises}
+                  renderItem={promise => (
+                    <List.Item
+                      actions={[
+                        <Checkbox
+                          checked={selectedPromiseIds.includes(promise.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPromiseIds([...selectedPromiseIds, promise.id]);
+                            } else {
+                              setSelectedPromiseIds(selectedPromiseIds.filter(id => id !== promise.id));
+                            }
+                          }}
+                        >
+                          Reconcile
+                        </Checkbox>
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={<Text strong>₹{promise.amount}</Text>}
+                        description={`Due: ${dayjs(promise.dueDate).format('DD MMM YYYY')} ${promise.notes ? `(${promise.notes})` : ''}`}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </div>
+            )}
           </div>
         )}
 

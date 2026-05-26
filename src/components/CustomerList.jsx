@@ -12,7 +12,10 @@ import {
   message,
   Popconfirm,
   Avatar,
-  Select
+  Select,
+  AutoComplete,
+  Row,
+  Col
 } from 'antd';
 import {
   PlusOutlined,
@@ -23,7 +26,9 @@ import {
   PhoneOutlined,
   EnvironmentOutlined,
   FilterOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  SafetyOutlined,
+  WalletOutlined
 } from '@ant-design/icons';
 import { calculateBalance } from '../utils/calculations';
 import { smartTransliterate, transliterateToHindi as basicTransliterate } from '../utils/transliteration';
@@ -67,8 +72,12 @@ const CustomerList = ({
       .join(' ');
   };
 
-  // Get unique villages for filter
-  const villages = ['all', ...new Set(customers.map(c => c.village).filter(Boolean))];
+  // Get unique villages for filter and autocomplete
+  const uniqueVillages = useMemo(() => {
+    return [...new Set(customers.map(c => c.village).filter(Boolean))];
+  }, [customers]);
+
+  const villages = ['all', ...uniqueVillages];
 
   // Filter customers by search and village
   const filteredCustomers = customers.filter(c => {
@@ -96,6 +105,7 @@ const CustomerList = ({
         phone: values.phone || '',
         village: values.village || '',
         address: values.address || '',
+        gst: values.gst || '',
         openingBalance: parseInt(values.openingBalance) || 0,
         createdAt: Date.now(),
         hasWhatsApp: values.phone ? true : false,
@@ -363,59 +373,115 @@ const CustomerList = ({
           layout="vertical"
           style={{ marginTop: 16 }}
         >
-          <Form.Item
-            name="name"
-            label={language === 'hi' ? 'नाम (English)' : 'Name (English)'}
-            rules={[{ required: true, message: language === 'hi' ? 'नाम जरूरी है' : 'Name is required' }]}
-          >
-            <Input
-              placeholder="Shivam Kumar"
-              size="large"
-              onChange={(e) => {
-                const englishName = e.target.value;
-                // Auto-transliterate to Hindi
-                if (englishName) {
-                  form.setFieldsValue({
-                    nameHi: transliterateToHindi(englishName)
-                  });
-                }
-              }}
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="name"
+                label={language === 'hi' ? 'नाम (English)' : 'Name (English)'}
+                rules={[{ required: true, message: language === 'hi' ? 'नाम जरूरी है' : 'Name is required' }]}
+              >
+                <Input
+                  placeholder="Shivam Kumar"
+                  size="large"
+                  prefix={<UserOutlined style={{ color: '#1890ff' }} />}
+                  onChange={(e) => {
+                    const englishName = e.target.value;
+                    if (englishName) {
+                      form.setFieldsValue({
+                        nameHi: transliterateToHindi(englishName)
+                      });
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="nameHi"
+                label={language === 'hi' ? 'नाम (हिंदी) - स्वतः भरा गया' : 'Name (Hindi) - Auto-filled'}
+              >
+                <Input
+                  placeholder="शिवम कुमार"
+                  size="large"
+                  prefix={<UserOutlined style={{ color: '#fa8c16' }} />}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            name="nameHi"
-            label={language === 'hi' ? 'नाम (हिंदी) - स्वतः भरा गया' : 'Name (Hindi) - Auto-filled'}
-          >
-            <Input
-              placeholder="शिवम कुमार"
-              size="large"
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="phone"
+                label={language === 'hi' ? 'फ़ोन नंबर' : 'Phone Number'}
+                rules={[
+                  { pattern: /^[0-9]{10}$/, message: language === 'hi' ? '10 अंकों का नंबर चाहिए' : '10 digits required' }
+                ]}
+              >
+                <Input
+                  placeholder="9876543210"
+                  maxLength={10}
+                  size="large"
+                  prefix={<PhoneOutlined style={{ color: '#52c41a' }} />}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="village"
+                label={language === 'hi' ? 'गाँव/इलाका' : 'Village/Area'}
+              >
+                <AutoComplete
+                  options={uniqueVillages.map(v => ({ value: v }))}
+                  placeholder="Sleemnabad"
+                  filterOption={(inputValue, option) =>
+                    option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                  }
+                >
+                  <Input
+                    size="large"
+                    prefix={<EnvironmentOutlined style={{ color: '#f5222d' }} />}
+                  />
+                </AutoComplete>
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            name="phone"
-            label={language === 'hi' ? 'फ़ोन नंबर' : 'Phone Number'}
-            rules={[
-              { pattern: /^[0-9]{10}$/, message: language === 'hi' ? '10 अंकों का नंबर चाहिए' : '10 digits required' }
-            ]}
-          >
-            <Input
-              placeholder="9876543210"
-              maxLength={10}
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="village"
-            label={language === 'hi' ? 'गाँव/इलाका' : 'Village/Area'}
-          >
-            <Input
-              placeholder="Sleemnabad"
-              size="large"
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} sm={!editingCustomer ? 12 : 24}>
+              <Form.Item
+                name="gst"
+                label={language === 'hi' ? 'जीएसटीआईएन (GSTIN)' : 'GSTIN (GST Number)'}
+                rules={[
+                  { pattern: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, message: language === 'hi' ? 'अमान्य जीएसटी नंबर' : 'Invalid GSTIN Format' }
+                ]}
+              >
+                <Input
+                  placeholder="22AAAAA1111A1Z1"
+                  size="large"
+                  prefix={<SafetyOutlined style={{ color: '#722ed1' }} />}
+                />
+              </Form.Item>
+            </Col>
+            {!editingCustomer && (
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="openingBalance"
+                  label={language === 'hi' ? 'शुरुआती बैलेंस (₹)' : 'Opening Balance (₹)'}
+                  initialValue={0}
+                  tooltip={language === 'hi' ? 'पुरानी उधारी जोड़ें' : 'Add existing outstanding amount'}
+                >
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    size="large"
+                    prefix={<WalletOutlined style={{ color: '#13c2c2' }} />}
+                    min={0}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+          </Row>
 
           <Form.Item
             name="address"
@@ -426,23 +492,6 @@ const CustomerList = ({
               placeholder={language === 'hi' ? 'पूरा पता लिखें...' : 'Enter full address...'}
             />
           </Form.Item>
-
-          {!editingCustomer && (
-            <Form.Item
-              name="openingBalance"
-              label={language === 'hi' ? 'शुरुआती बैलेंस (₹)' : 'Opening Balance (₹)'}
-              initialValue={0}
-              tooltip={language === 'hi' ? 'पुरानी उधारी जोड़ें' : 'Add existing outstanding amount'}
-            >
-              <Input
-                type="number"
-                placeholder="0"
-                size="large"
-                prefix="₹"
-                min={0}
-              />
-            </Form.Item>
-          )}
         </Form>
       </Modal>
 
