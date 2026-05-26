@@ -143,13 +143,26 @@ function App() {
 
   // Setters (Adapters for Legacy Code)
   // These wrappers ensure that when child components call setX, we update IndexedDB
-  const createSetter = (table) => (data) => {
+  const normalizeForCompare = (item) => {
+    const { synced, shopId: _shopId, ...rest } = item || {};
+    return JSON.stringify(rest);
+  };
+
+  const createSetter = (table, currentItems = []) => (data) => {
     if (typeof data === 'function') {
-      console.warn('Function update not supported fully in offline adapter:', table);
-      return;
+      data = data(currentItems);
     }
+
     const items = Array.isArray(data) ? data : [data];
-    const enriched = items.map(i => ({ ...i, shopId }));
+    const currentById = new Map((currentItems || []).map(item => [item.id, item]));
+    const changedItems = items.filter(item => {
+      const existing = currentById.get(item.id);
+      return !existing || normalizeForCompare(existing) !== normalizeForCompare(item);
+    });
+
+    if (changedItems.length === 0) return;
+
+    const enriched = changedItems.map(i => ({ ...i, shopId, updatedAt: i.updatedAt || Date.now() }));
     // We use saveToDb which marks them as synced=0 (false)
     saveToDb(table, enriched);
   };
@@ -158,16 +171,16 @@ function App() {
     deleteFromDb(table, id);
   };
 
-  const setCustomers = createSetter('customers');
-  const setTransactions = createSetter('transactions');
-  const setPromises = createSetter('promises');
-  const setCalls = createSetter('calls');
-  const setProducts = createSetter('products');
-  const setSuppliers = createSetter('suppliers');
-  const setInvoices = createSetter('invoices');
-  const setPayments = createSetter('payments');
-  const setExpenses = createSetter('expenses');
-  const setWorkers = createSetter('workers');
+  const setCustomers = createSetter('customers', customers);
+  const setTransactions = createSetter('transactions', transactions);
+  const setPromises = createSetter('promises', promises);
+  const setCalls = createSetter('calls', calls);
+  const setProducts = createSetter('products', products);
+  const setSuppliers = createSetter('suppliers', suppliers);
+  const setInvoices = createSetter('invoices', invoices);
+  const setPayments = createSetter('payments', payments);
+  const setExpenses = createSetter('expenses', expenses);
+  const setWorkers = createSetter('workers', workers);
 
   // Deletion Handlers
   const deleteCustomer = createDeleter('customers');

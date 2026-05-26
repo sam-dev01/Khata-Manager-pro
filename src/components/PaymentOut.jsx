@@ -7,6 +7,8 @@ import { DatePicker } from 'antd';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+const createId = () => `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
 const PaymentOut = ({ customers, transactions, setTransactions, language }) => {
     // Each row represents a payment entry
     // Default one empty row
@@ -40,7 +42,7 @@ const PaymentOut = ({ customers, transactions, setTransactions, language }) => {
         }
 
         const newTransactions = validRows.map(row => ({
-            id: Date.now() + Math.random().toString(), // Ensure unique ID
+            id: createId(),
             customerId: row.customerId,
             type: 'credit', // 'Payment Out' = Udhari given = Credit
             amount: parseFloat(row.amount),

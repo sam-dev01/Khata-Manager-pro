@@ -77,10 +77,8 @@ const CustomerList = ({
   const handleAdd = (values) => {
     if (editingCustomer) {
       // Update existing customer
-      const updatedCustomers = customers.map(c =>
-        c.id === editingCustomer.id ? { ...c, ...values } : c
-      );
-      setCustomers(updatedCustomers);
+      const updatedCustomer = { ...editingCustomer, ...values, updatedAt: Date.now() };
+      setCustomers(updatedCustomer);
       message.success(language === 'hi' ? 'ग्राहक अपडेट हो गया' : 'Customer updated');
     } else {
       // Add new customer
@@ -95,7 +93,8 @@ const CustomerList = ({
         createdAt: Date.now(),
         hasWhatsApp: values.phone ? true : false,
         photoUrl: '',
-        billPhotos: []
+        billPhotos: [],
+        updatedAt: Date.now()
       };
 
       // Add opening balance transaction if > 0
@@ -109,10 +108,10 @@ const CustomerList = ({
           notes: 'Opening Balance',
           timestamp: Date.now()
         };
-        setTransactions([...transactions, openingTxn]);
+        setTransactions(openingTxn);
       }
 
-      setCustomers([...customers, newCustomer]);
+      setCustomers(newCustomer);
       message.success(language === 'hi' ? 'नया ग्राहक जुड़ गया' : 'Customer added');
     }
 

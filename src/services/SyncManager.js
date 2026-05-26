@@ -8,6 +8,13 @@ const COLLECTIONS = [
     'products', 'suppliers', 'invoices', 'payments', 'expenses', 'workers'
 ];
 
+const firebaseKey = (id) => String(id).replace(/[.#$/[\]]/g, '_');
+const itemTime = (item = {}) => {
+    const raw = item.updatedAt || item.createdAt || item.timestamp || item.lockedAt || item.date || 0;
+    const parsed = typeof raw === 'number' ? raw : Date.parse(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
 export const syncService = {
     shopId: null,
     isSyncing: false,
@@ -25,6 +32,7 @@ export const syncService = {
         this.onlineHandler = () => {
             console.debug('🌐 Online: Triggering Sync...');
             this.sync();
+            this.listen();
         };
 
         window.addEventListener('online', this.onlineHandler);
@@ -63,7 +71,10 @@ export const syncService = {
                 const localItem = await db.table(collection).get(item.id);
                 if (localItem && localItem.synced === 0) {
                     console.warn(`⚠️ Conflict Ignored: Local edit for ${collection}/${item.id} is pending sync. keeping local.`);
-                    return; // Client-Wins for now (Will overwrite cloud on next sync)
+                    if (itemTime(item) <= itemTime(localItem)) {
+                        return; // Client-Wins unless the cloud copy is newer.
+                    }
+                    console.warn(`Cloud item is newer for ${collection}/${item.id}; accepting cloud version.`);
                 }
 
                 // Save to local DB, marking as synced so we don't push it back
@@ -102,7 +113,7 @@ export const syncService = {
                     if (task.type === 'DELETE') {
                         // Delete from Firebase
                         // Path: firms/{shopId}/data/{table}/{itemId}
-                        await remove(ref(database, `firms/${this.shopId}/data/${task.table}/${task.itemId}`));
+                        await remove(ref(database, `firms/${this.shopId}/data/${task.table}/${firebaseKey(task.itemId)}`));
                     }
                     // Remove from queue after success
                     await db.syncQueue.delete(task.id);
@@ -125,7 +136,7 @@ export const syncService = {
                     unsyncedItems.forEach(item => {
                         const payload = { ...item };
                         delete payload.synced;
-                        updates[`firms/${this.shopId}/data/${collection}/${item.id}`] = payload;
+                        updates[`firms/${this.shopId}/data/${collection}/${firebaseKey(item.id)}`] = payload;
                     });
                     hasUpdates = true;
                 }
