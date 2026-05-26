@@ -38,8 +38,8 @@ export const syncService = {
         window.addEventListener('online', this.onlineHandler);
 
         if (navigator.onLine) {
-            this.sync();
             this.listen();
+            setTimeout(() => this.sync(), 2000);
         }
 
         // Periodic check (keep reference if we want to clear interval too, but interval is less harmful)
