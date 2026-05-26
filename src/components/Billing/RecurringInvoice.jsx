@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Table, Button, Select, Input, Typography, Space, Modal, message,
     Tag, Switch, InputNumber, DatePicker, Form, Divider, Empty, Tooltip, Card, Row, Col
@@ -37,7 +37,13 @@ export default function RecurringInvoice({
 
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [form] = Form.useForm();
-    const [isMobile] = useState(window.innerWidth <= 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Persist schedules to localStorage
     const saveSchedules = (newSchedules) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Select, Input, message, Typography, Row, Col } from 'antd';
 import { PlusOutlined, DeleteOutlined, SaveOutlined, DollarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -10,6 +10,14 @@ const { Option } = Select;
 const createId = () => `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
 const PaymentOut = ({ customers, transactions, setTransactions, language }) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Each row represents a payment entry
     // Default one empty row
     const [rows, setRows] = useState([
@@ -125,7 +133,7 @@ const PaymentOut = ({ customers, transactions, setTransactions, language }) => {
                         size="large"
                         icon={<DeleteOutlined />}
                         onClick={() => removeRow(row.id)}
-                        block={window.innerWidth < 768} // Block on mobile for easier tap
+                        block={isMobile} // Block on mobile for easier tap
                     />
                 </Col>
             </Row>
@@ -172,7 +180,7 @@ const PaymentOut = ({ customers, transactions, setTransactions, language }) => {
                 boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
                 zIndex: 1000,
                 // Adjust for sidebar
-                marginLeft: window.innerWidth > 768 ? 200 : 0
+                marginLeft: !isMobile ? 200 : 0
             }}>
                 <Text strong style={{ fontSize: 18 }}>
                     Total: <span style={{ color: '#ff4d4f' }}>₹{rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0)}</span>

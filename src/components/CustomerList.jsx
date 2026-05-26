@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   List,
@@ -43,7 +43,14 @@ const CustomerList = ({
   onViewStatement,
   deleteCustomer
 }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [filterVillage, setFilterVillage] = useState('all');
@@ -166,7 +173,7 @@ const CustomerList = ({
           flexWrap: 'wrap',
           gap: '12px'
         }}
-        direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}
+        direction={isMobile ? 'vertical' : 'horizontal'}
       >
         <Button
           type="primary"
@@ -177,19 +184,19 @@ const CustomerList = ({
             setIsModalOpen(true);
           }}
           size="large"
-          style={{ width: window.innerWidth < 768 ? '100%' : 'auto' }}
+          style={{ width: isMobile ? '100%' : 'auto' }}
         >
           {language === 'hi' ? 'नया ग्राहक जोड़ें' : 'Add New Customer'}
         </Button>
 
         <Space
-          style={{ width: window.innerWidth < 768 ? '100%' : 'auto' }}
-          direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}
+          style={{ width: isMobile ? '100%' : 'auto' }}
+          direction={isMobile ? 'vertical' : 'horizontal'}
         >
           <Select
             value={filterVillage}
             onChange={setFilterVillage}
-            style={{ width: window.innerWidth < 768 ? '100%' : 200 }}
+            style={{ width: isMobile ? '100%' : 200 }}
             size="large"
             suffixIcon={<FilterOutlined />}
           >
@@ -206,7 +213,7 @@ const CustomerList = ({
           <Search
             placeholder={language === 'hi' ? 'नाम या फ़ोन से खोजें' : 'Search by name or phone'}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: window.innerWidth < 768 ? '100%' : 250 }}
+            style={{ width: isMobile ? '100%' : 250 }}
             size="large"
             allowClear
           />

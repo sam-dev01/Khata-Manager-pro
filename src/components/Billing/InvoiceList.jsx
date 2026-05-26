@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Table, Button, Select, DatePicker, Input, Typography, Space, Modal, message,
     Tag, Drawer, InputNumber, Divider, Badge, List, Tabs, Radio, Empty, Tooltip, Popover
@@ -45,7 +45,13 @@ export default function InvoiceList({
     const [shareModalVisible, setShareModalVisible] = useState(false);
     const [shareInvoice, setShareInvoice] = useState(null);
 
-    const [isMobile] = useState(window.innerWidth <= 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Enrich invoices with derived status and paid amount
     const enrichedInvoices = useMemo(() => {

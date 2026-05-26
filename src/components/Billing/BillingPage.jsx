@@ -437,7 +437,7 @@ const BillingPage = ({
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden', background: '#f0f2f5' }}>
 
                 {/* LEFT: PRODUCTS GRID */}
-                <div style={{ flex: 1, padding: 10, overflowY: 'auto' }}>
+                <div style={{ flex: 1, padding: isMobile ? '10px 10px 80px 10px' : 10, overflowY: 'auto' }}>
                     {filteredProducts.length === 0 ? (
                         <div style={{ textAlign: 'center', marginTop: 50, color: '#999' }}>
                             <ShoppingOutlined style={{ fontSize: 40, marginBottom: 10 }} />

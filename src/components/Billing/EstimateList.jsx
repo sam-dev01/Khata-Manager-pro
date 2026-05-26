@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Table, Button, Select, DatePicker, Input, Typography, Space, Modal, message,
     Tag, Divider, Empty, Tooltip, Badge, Drawer
@@ -33,7 +33,13 @@ export default function EstimateList({
     const [statusFilter, setStatusFilter] = useState('all');
     const [previewVisible, setPreviewVisible] = useState(false);
     const [previewHtml, setPreviewHtml] = useState('');
-    const [isMobile] = useState(window.innerWidth <= 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Estimates are invoices with docType='estimate'
     const estimates = useMemo(() => {
