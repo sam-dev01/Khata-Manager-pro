@@ -574,13 +574,15 @@ function App() {
           <Header style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(12px)',
-            padding: '0 24px',
+            padding: '16px 24px', // Safe vertical padding
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
             flexShrink: 0,
-            height: 72,
+            height: 'auto', // Dynamic height
+            minHeight: 72, // Target standard height
+            lineHeight: 'normal',
             position: 'sticky',
             top: 0,
             zIndex: 900
@@ -657,11 +659,11 @@ function App() {
                 }}
                 trigger={['click']}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, cursor: 'pointer', lineHeight: 'normal' }}>
                   <div style={{ fontWeight: 700, color: '#111827', fontSize: 18, lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 6 }}>
                     {shopName} <span style={{ fontSize: 10, color: '#9ca3af' }}>▼</span>
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500, lineHeight: 1.2 }}>
                     Manager Pro • {userRole === 'admin' ? 'Admin' : 'Manager'}
                   </div>
                 </div>
@@ -698,7 +700,7 @@ function App() {
         {/* Minimal responsive CSS adjustments */}
         <style>{`
           @media (max-width: 768px) {
-            .ant-layout-header { padding: 0 16px !important; }
+            .ant-layout-header { padding: 12px 16px !important; height: auto !important; min-height: 56px !important; line-height: normal !important; }
             .ant-layout-content { padding: 12px !important; }
             .ant-menu-item { border-radius: 8px; margin-bottom: 4px; }
           }
