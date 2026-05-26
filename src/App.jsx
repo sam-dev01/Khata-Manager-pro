@@ -322,6 +322,7 @@ function App() {
 
     return [
       { key: 'dashboard', icon: <DashboardOutlined />, label: language === 'hi' ? 'डैशबोर्ड' : 'Dashboard' },
+      { key: 'customers', icon: <UserOutlined />, label: language === 'hi' ? 'ग्राहक लिस्ट' : 'Customer List' },
 
       // Group 1: Khata / Udhari System
       {
@@ -329,7 +330,6 @@ function App() {
         icon: <WalletOutlined />,
         label: language === 'hi' ? 'उधारी खाता (Ledger)' : 'Khata Management',
         children: [
-          { key: 'customers', icon: <UserOutlined />, label: language === 'hi' ? 'ग्राहक लिस्ट' : 'Customer List' },
           { key: 'voice', icon: <SoundOutlined />, label: language === 'hi' ? '🎙️ खाता दोस्त (Voice)' : '🎙️ Voice Assistant' },
           { key: 'payment', icon: <DollarOutlined />, label: language === 'hi' ? 'पेमेंट लें (Receive)' : 'Receive Payment' },
           { key: 'payment_out', icon: <DollarOutlined rotate={180} style={{ color: '#ff4d4f' }} />, label: language === 'hi' ? 'उधारी दें (Debit)' : 'Give Credit' },

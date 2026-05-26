@@ -47,11 +47,19 @@ export const themeConfig = {
             itemBorderRadius: 8,
             itemHeight: 44,
             iconSize: 18,
+            darkItemBg: 'transparent',
+            darkItemBgSelected: '#6366f1',
+            darkItemSelectedColor: '#ffffff',
+            darkItemColor: '#94a3b8', // slate-400
+            darkItemHoverBg: 'rgba(255, 255, 255, 0.04)',
+            darkItemHoverColor: '#ffffff',
+            darkSubMenuItemBg: 'rgba(0, 0, 0, 0.15)',
         },
         Layout: {
             bodyBg: '#f3f4f6',
             headerBg: 'rgba(255, 255, 255, 0.8)',
             siderBg: '#1e1b4b', // Indigo-950
+            headerHeight: 72,
         },
         Typography: {
             fontFamilyCode: "'JetBrains Mono', monospace",

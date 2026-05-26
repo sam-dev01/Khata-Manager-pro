@@ -788,17 +788,19 @@ const BillingPage = ({
             </Drawer>
 
             {/* Camera Scanner */}
-            {cameraVisible && (
-                <Modal open={true} onCancel={() => setCameraVisible(false)} footer={null} title="Scan Barcode">
-                    <CameraScanner
-                        onScan={(code) => {
-                            const p = products.find(x => x.barcode === code);
-                            if (p) { addToCart(p); message.success('Scanned!'); }
-                            else message.error('Product not found');
-                        }}
-                    />
-                </Modal>
-            )}
+            <CameraScanner
+                visible={cameraVisible}
+                onClose={() => setCameraVisible(false)}
+                onScan={(code) => {
+                    const p = products.find(x => x.barcode === code);
+                    if (p) {
+                        addToCart(p);
+                        setCameraVisible(false);
+                    } else {
+                        message.error('Product not found');
+                    }
+                }}
+            />
         </div>
     );
 };

@@ -1,4 +1,5 @@
 // src/components/BackupRestore.jsx
+// src/components/BackupRestore.jsx
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
@@ -16,7 +17,11 @@ import {
   DatabaseOutlined,
   HistoryOutlined,
   FileDoneOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  UserOutlined,
+  RetweetOutlined,
+  FileTextOutlined,
+  ShoppingOutlined
 } from '@ant-design/icons';
 import { exportData, importData, loadData, getCurrentShopInfo } from '../utils/storage';
 
@@ -435,8 +440,5 @@ const BackupRestore = ({
     </div>
   );
 };
-
-// Icons needed for Stats (internal definitions if not imported)
-import { UserOutlined, RetweetOutlined, FileTextOutlined, ShoppingOutlined } from '@ant-design/icons';
 
 export default BackupRestore;
