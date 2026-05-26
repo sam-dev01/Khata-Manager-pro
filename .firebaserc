@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "khata-manager-f28e9": {
+      "database": {
+        "main": [
+          "khata-manager-f28e9-default-rtdb"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
