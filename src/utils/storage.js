@@ -1,6 +1,66 @@
 // src/utils/storage.js
 import { ref, get, set, update } from "firebase/database";
 import { database, auth } from "../firebase";
+import { db } from "../db/db";
+
+const DATA_COLLECTIONS = [
+  "customers",
+  "transactions",
+  "promises",
+  "calls",
+  "products",
+  "suppliers",
+  "invoices",
+  "payments",
+  "expenses",
+  "workers"
+];
+
+const asArray = (value) => {
+  if (!value) return [];
+  return Array.isArray(value) ? value : Object.values(value);
+};
+
+const getSettingsKeys = (shopId) => ({
+  shopName: 'current_shop_name',
+  address: `shop_${shopId}_address`,
+  phone: `shop_${shopId}_phone`,
+  email: `shop_${shopId}_email`,
+  gst: `shop_${shopId}_gst`,
+  logo: `shop_${shopId}_logo`,
+  signature: `shop_${shopId}_signature`,
+  billSettings: `shop_${shopId}_bill_settings`
+});
+
+const readLocalSettings = (shopId) => {
+  const keys = getSettingsKeys(shopId);
+  const legacy = (key) => localStorage.getItem(`${key} `);
+  const read = (key) => localStorage.getItem(key) || legacy(key) || '';
+  return {
+    shopName: read(keys.shopName),
+    shopAddress: read(keys.address),
+    shopPhone: read(keys.phone),
+    shopEmail: read(keys.email),
+    shopGst: read(keys.gst),
+    logo: read(keys.logo),
+    signature: read(keys.signature),
+    billSettings: JSON.parse(localStorage.getItem(keys.billSettings) || legacy(keys.billSettings) || '{}')
+  };
+};
+
+const writeLocalSettings = (shopId, settings = {}) => {
+  const keys = getSettingsKeys(shopId);
+  if (settings.shopName !== undefined) localStorage.setItem(keys.shopName, settings.shopName || '');
+  if (settings.shopAddress !== undefined) localStorage.setItem(keys.address, settings.shopAddress || '');
+  if (settings.shopPhone !== undefined) localStorage.setItem(keys.phone, settings.shopPhone || '');
+  if (settings.shopEmail !== undefined) localStorage.setItem(keys.email, settings.shopEmail || '');
+  if (settings.shopGst !== undefined) localStorage.setItem(keys.gst, settings.shopGst || '');
+  if (settings.logo !== undefined) localStorage.setItem(keys.logo, settings.logo || '');
+  if (settings.signature !== undefined) localStorage.setItem(keys.signature, settings.signature || '');
+  if (settings.billSettings !== undefined) {
+    localStorage.setItem(keys.billSettings, JSON.stringify(settings.billSettings || {}));
+  }
+};
 
 // ----------------- Helpers -----------------
 export function sanitizeShopId(raw) {
@@ -155,12 +215,30 @@ export const updatePublicIndex = async (shopId, payload) => {
 
 export const exportData = async () => {
   try {
-    // If shop is selected, export local shop data? 
-    // Or full root? BackupRestore usage suggests full export of current shop context via database root dump is risky.
-    // But aligning with previous impl:
-    const rootRef = ref(database, "/");
-    const snap = await get(rootRef);
-    return snap.exists() ? snap.val() : {};
+    const shopId = localStorage.getItem('current_shop_id');
+    const shopName = localStorage.getItem('current_shop_name');
+    if (!shopId) return {};
+
+    const exported = {
+      meta: {
+        shopId,
+        shopName,
+        exportedAt: Date.now(),
+        version: '3.0'
+      },
+      settings: readLocalSettings(shopId)
+    };
+
+    for (const collection of DATA_COLLECTIONS) {
+      if (db.tables.some(table => table.name === collection)) {
+        exported[collection] = await db.table(collection)
+          .where('shopId')
+          .equals(shopId)
+          .toArray();
+      }
+    }
+
+    return exported;
   } catch (err) {
     console.error("exportData error", err);
     return {};
@@ -171,9 +249,18 @@ export const loadData = async () => {
   try {
     const shopId = localStorage.getItem('current_shop_id');
     if (!shopId) return null;
-    const dataRef = ref(database, `shops/${shopId}/data`);
+    const dataRef = ref(database, `firms/${shopId}/data`);
     const snap = await get(dataRef);
-    return snap.exists() ? snap.val() : null;
+    const settingsSnap = await get(ref(database, `firms/${shopId}/settings`));
+    if (!snap.exists() && !settingsSnap.exists()) return null;
+
+    const cloudData = snap.exists() ? snap.val() : {};
+    const loaded = DATA_COLLECTIONS.reduce((acc, collection) => {
+      acc[collection] = asArray(cloudData[collection]);
+      return acc;
+    }, {});
+    loaded.settings = settingsSnap.exists() ? settingsSnap.val() : {};
+    return loaded;
   } catch (err) {
     console.error("loadData error", err);
     return null;
@@ -185,19 +272,41 @@ export const importData = async (data) => {
     const shopId = localStorage.getItem('current_shop_id');
     if (!shopId) return { success: false, message: 'No shop selected' };
 
-    // Direct overwrite of shop data
-    await set(ref(database, `shops/${shopId}/data`), {
-      customers: data.customers || {},
-      transactions: data.transactions || {},
-      promises: data.promises || {},
-      calls: data.calls || {},
-      products: data.products || [],
-      suppliers: data.suppliers || [],
-      invoices: data.invoices || [],
-      expenses: data.expenses || [],
-      workers: data.workers || [],
-      lastUpdated: Date.now()
-    });
+    if (data.settings) {
+      writeLocalSettings(shopId, data.settings);
+    }
+
+    const cloudPayload = {};
+    for (const collection of DATA_COLLECTIONS) {
+      if (!db.tables.some(table => table.name === collection)) continue;
+
+      const items = asArray(data[collection]).map(item => ({
+        ...item,
+        shopId,
+        synced: 0
+      }));
+
+      await db.table(collection)
+        .where('shopId')
+        .equals(shopId)
+        .delete();
+
+      if (items.length > 0) {
+        await db.table(collection).bulkPut(items);
+        cloudPayload[collection] = items.reduce((acc, item) => {
+          const { synced, ...payload } = item;
+          acc[item.id] = payload;
+          return acc;
+        }, {});
+      } else {
+        cloudPayload[collection] = null;
+      }
+    }
+
+    await set(ref(database, `firms/${shopId}/data`), cloudPayload);
+    if (data.settings) {
+      await set(ref(database, `firms/${shopId}/settings`), data.settings);
+    }
     return { success: true };
   } catch (err) {
     console.error("importData error", err);

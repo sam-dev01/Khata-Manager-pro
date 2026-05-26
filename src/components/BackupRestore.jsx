@@ -32,6 +32,7 @@ const BackupRestore = ({
   products = [], setProducts,
   suppliers = [], setSuppliers,
   invoices = [], setInvoices,
+  payments = [], setPayments,
   expenses = [], setExpenses,
   workers = [], setWorkers,
   language = 'en'
@@ -52,8 +53,9 @@ const BackupRestore = ({
     transactions: transactions.length,
     promises: promises.length,
     invoices: invoices.length,
+    payments: payments.length,
     products: products.length
-  }), [customers, transactions, promises, invoices, products]);
+  }), [customers, transactions, promises, invoices, payments, products]);
 
   // Build structured JSON for export (fallback)
   const buildExportObject = useCallback(() => ({
@@ -70,9 +72,10 @@ const BackupRestore = ({
     products: products || [],
     suppliers: suppliers || [],
     invoices: invoices || [],
+    payments: payments || [],
     expenses: expenses || [],
     workers: workers || []
-  }), [customers, transactions, promises, calls, products, suppliers, invoices, expenses, workers, shopInfo]);
+  }), [customers, transactions, promises, calls, products, suppliers, invoices, payments, expenses, workers, shopInfo]);
 
   const triggerDownload = (blob, filename) => {
     try {
@@ -204,7 +207,7 @@ const BackupRestore = ({
         try {
           // Snapshot for Undo
           const snapshot = {
-            customers, transactions, promises, calls, products, suppliers, invoices, expenses, workers, takenAt: Date.now()
+            customers, transactions, promises, calls, products, suppliers, invoices, payments, expenses, workers, takenAt: Date.now()
           };
           undoSnapshotRef.current = snapshot;
           try { localStorage.setItem(`khata_undo_${shopInfo.shopId}`, JSON.stringify(snapshot)); } catch (e) { }
@@ -219,6 +222,7 @@ const BackupRestore = ({
           setProducts(data.products || []);
           setSuppliers(data.suppliers || []);
           setInvoices(data.invoices || []);
+          setPayments(data.payments || []);
           setExpenses(data.expenses || []);
           setWorkers(data.workers || []);
 
@@ -251,6 +255,13 @@ const BackupRestore = ({
       setTransactions(data.transactions || []);
       setPromises(data.promises || []);
       setCalls(data.calls || []);
+      setProducts(data.products || []);
+      setSuppliers(data.suppliers || []);
+      setInvoices(data.invoices || []);
+      setPayments(data.payments || []);
+      setExpenses(data.expenses || []);
+      setWorkers(data.workers || []);
+      await importData(data);
       message.success(language === 'hi' ? '✅ क्लाउड से अपडेट हो गया!' : '✅ Latest data loaded from cloud!');
     } catch (error) {
       console.error('Refresh error:', error);
@@ -258,7 +269,7 @@ const BackupRestore = ({
     } finally {
       setLoading(false);
     }
-  }, [setCustomers, setTransactions, setPromises, setCalls, language]);
+  }, [setCustomers, setTransactions, setPromises, setCalls, setProducts, setSuppliers, setInvoices, setPayments, setExpenses, setWorkers, language]);
 
   // --- UI COMPONENTS ---
 

@@ -59,10 +59,12 @@ export const markSynced = async (table, id) => {
 
 export const deleteFromDb = async (table, id) => {
     await db.transaction('rw', db.table(table), db.syncQueue, async () => {
+        const existing = await db.table(table).get(id);
         await db.table(table).delete(id);
         await db.syncQueue.add({
             table,
             itemId: id,
+            shopId: existing?.shopId || localStorage.getItem('current_shop_id') || null,
             type: 'DELETE',
             timestamp: Date.now()
         });
@@ -76,7 +78,7 @@ export const hasUnsyncedItems = async () => {
 
     // 2. Check Dirty Items in main tables
     // We can check a few critical tables.
-    const tables = ['customers', 'transactions', 'invoices', 'products'];
+    const tables = ['customers', 'transactions', 'invoices', 'payments', 'products'];
     for (const tbl of tables) {
         const count = await db.table(tbl).where('synced').equals(0).count();
         if (count > 0) return true;

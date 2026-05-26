@@ -1,10 +1,11 @@
 import { ref, update, get, onChildAdded, onChildChanged, onChildRemoved, remove } from 'firebase/database';
+import { message } from 'antd';
 import { database } from '../firebase';
 import { db, markSynced } from '../db/db';
 
 const COLLECTIONS = [
     'customers', 'transactions', 'promises', 'calls',
-    'products', 'suppliers', 'invoices', 'expenses', 'workers'
+    'products', 'suppliers', 'invoices', 'payments', 'expenses', 'workers'
 ];
 
 export const syncService = {
@@ -66,7 +67,7 @@ export const syncService = {
                 }
 
                 // Save to local DB, marking as synced so we don't push it back
-                await db.table(collection).put({ ...item, synced: 1 });
+                await db.table(collection).put({ ...item, shopId: this.shopId, synced: 1 });
             };
 
             // 2. REMOVED
@@ -94,9 +95,10 @@ export const syncService = {
         try {
             // A. Process DELETIONS from SyncQueue
             const queueItems = await db.syncQueue.toArray();
-            if (queueItems.length > 0) {
-                console.debug(`🗑 Processing ${queueItems.length} deletions...`);
-                for (const task of queueItems) {
+            const currentShopQueue = queueItems.filter(task => !task.shopId || task.shopId === this.shopId);
+            if (currentShopQueue.length > 0) {
+                console.debug(`🗑 Processing ${currentShopQueue.length} deletions...`);
+                for (const task of currentShopQueue) {
                     if (task.type === 'DELETE') {
                         // Delete from Firebase
                         // Path: firms/{shopId}/data/{table}/{itemId}
@@ -112,7 +114,11 @@ export const syncService = {
             let hasUpdates = false;
 
             for (const collection of COLLECTIONS) {
-                const unsyncedItems = await db.table(collection).where('synced').equals(0).toArray();
+                const unsyncedItems = await db.table(collection)
+                    .where('synced')
+                    .equals(0)
+                    .and(item => item.shopId === this.shopId)
+                    .toArray();
 
                 if (unsyncedItems.length > 0) {
                     console.debug(`📤 Preparing ${unsyncedItems.length} items from ${collection}`);
@@ -130,7 +136,11 @@ export const syncService = {
 
                 // Mark as synced locally
                 for (const collection of COLLECTIONS) {
-                    const unsyncedItems = await db.table(collection).where('synced').equals(0).toArray();
+                    const unsyncedItems = await db.table(collection)
+                        .where('synced')
+                        .equals(0)
+                        .and(item => item.shopId === this.shopId)
+                        .toArray();
                     await Promise.all(unsyncedItems.map(item => markSynced(collection, item.id)));
                 }
             }
@@ -182,7 +192,7 @@ export const syncService = {
 
                 for (const collection of COLLECTIONS) {
                     if (data[collection]) {
-                        const items = Object.values(data[collection]).map(item => ({ ...item, synced: 1 }));
+                        const items = Object.values(data[collection]).map(item => ({ ...item, shopId: this.shopId, synced: 1 }));
                         await db.table(collection).bulkPut(items);
                         count += items.length;
                     }

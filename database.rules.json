@@ -9,11 +9,14 @@
         "firms": {
             "$firmId": {
                 ".read": "root.child('firms').child($firmId).child('members').child(auth.uid).exists()",
-                ".write": "root.child('firms').child($firmId).child('members').child(auth.uid).exists() || !data.exists()",
+                ".write": "auth != null && (root.child('firms').child($firmId).child('members').child(auth.uid).exists() || !data.exists())",
                 "members": {
-                    ".write": "root.child('firms').child($firmId).child('members').child(auth.uid).child('role').val() === 'owner' || !data.exists()"
+                    ".write": "auth != null && (root.child('firms').child($firmId).child('members').child(auth.uid).child('role').val() === 'owner' || !data.exists())"
                 },
                 "data": {
+                    ".write": "root.child('firms').child($firmId).child('members').child(auth.uid).exists()"
+                },
+                "settings": {
                     ".write": "root.child('firms').child($firmId).child('members').child(auth.uid).exists()"
                 }
             }

@@ -149,7 +149,7 @@ const LabelSettingsTab = () => {
 
     useEffect(() => {
         const shopId = localStorage.getItem('current_shop_id');
-        const saved = localStorage.getItem(`shop_${shopId} _label_settings`);
+        const saved = localStorage.getItem(`shop_${shopId}_label_settings`) || localStorage.getItem(`shop_${shopId} _label_settings`);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -165,7 +165,7 @@ const LabelSettingsTab = () => {
     const handleSave = () => {
         const shopId = localStorage.getItem('current_shop_id');
         const data = { preset, settings, config };
-        localStorage.setItem(`shop_${shopId} _label_settings`, JSON.stringify(data));
+        localStorage.setItem(`shop_${shopId}_label_settings`, JSON.stringify(data));
         message.success('Label Settings Saved!');
     };
 
@@ -273,7 +273,11 @@ const ShopSettings = () => {
     const [form] = Form.useForm();
     const [billingForm] = Form.useForm();
     const shopId = localStorage.getItem('current_shop_id');
-    const getNamespacedKey = (key) => `shop_${shopId}_${key} `;
+    const getNamespacedKey = (key) => `shop_${shopId}_${key}`;
+    const getStoredSetting = (key, fallback = '') => {
+        const normalizedKey = getNamespacedKey(key);
+        return localStorage.getItem(normalizedKey) ?? localStorage.getItem(`${normalizedKey} `) ?? fallback;
+    };
 
     // Image Upload State
     const [logoFileList, setLogoFileList] = useState([]);
@@ -302,18 +306,18 @@ const ShopSettings = () => {
     useEffect(() => {
         // Load settings
         const shopName = localStorage.getItem('current_shop_name') || '';
-        const shopAddress = localStorage.getItem(getNamespacedKey('address')) || '';
-        const shopPhone = localStorage.getItem(getNamespacedKey('phone')) || '';
-        const shopEmail = localStorage.getItem(getNamespacedKey('email')) || '';
-        const shopGst = localStorage.getItem(getNamespacedKey('gst')) || '';
-        const billSettings = JSON.parse(localStorage.getItem(getNamespacedKey('bill_settings')) || '{}');
+        const shopAddress = getStoredSetting('address');
+        const shopPhone = getStoredSetting('phone');
+        const shopEmail = getStoredSetting('email');
+        const shopGst = getStoredSetting('gst');
+        const billSettings = JSON.parse(getStoredSetting('bill_settings', '{}'));
 
         // Load Images
-        const savedLogo = localStorage.getItem(getNamespacedKey('logo'));
+        const savedLogo = getStoredSetting('logo');
         if (savedLogo) {
             setLogoFileList([{ uid: '-1', name: 'logo.png', status: 'done', url: savedLogo }]);
         }
-        const savedSig = localStorage.getItem(getNamespacedKey('signature'));
+        const savedSig = getStoredSetting('signature');
         if (savedSig) {
             setSignatureFileList([{ uid: '-1', name: 'signature.png', status: 'done', url: savedSig }]);
         }
@@ -354,7 +358,7 @@ const ShopSettings = () => {
             message.loading({ content: 'Saving settings...', key: 'save' });
 
             // 1. Process Images to Base64
-            let logoBase64 = localStorage.getItem(getNamespacedKey('logo')) || '';
+            let logoBase64 = getStoredSetting('logo');
             if (logoFileList.length > 0) {
                 if (logoFileList[0].originFileObj) {
                     logoBase64 = await getBase64(logoFileList[0].originFileObj);
@@ -365,7 +369,7 @@ const ShopSettings = () => {
                 logoBase64 = ''; // Cleared
             }
 
-            let signatureBase64 = localStorage.getItem(getNamespacedKey('signature')) || '';
+            let signatureBase64 = getStoredSetting('signature');
             if (signatureFileList.length > 0) {
                 if (signatureFileList[0].originFileObj) {
                     signatureBase64 = await getBase64(signatureFileList[0].originFileObj);
@@ -378,13 +382,13 @@ const ShopSettings = () => {
 
             // 2. Prepare Data
             const shopName = values.shopName || localStorage.getItem('current_shop_name');
-            const shopAddress = values.shopAddress !== undefined ? values.shopAddress : (localStorage.getItem(getNamespacedKey('address')) || '');
-            const shopPhone = values.shopPhone !== undefined ? values.shopPhone : (localStorage.getItem(getNamespacedKey('phone')) || '');
-            const shopEmail = values.shopEmail !== undefined ? values.shopEmail : (localStorage.getItem(getNamespacedKey('email')) || '');
-            const shopGst = values.shopGst !== undefined ? values.shopGst : (localStorage.getItem(getNamespacedKey('gst')) || '');
+            const shopAddress = values.shopAddress !== undefined ? values.shopAddress : getStoredSetting('address');
+            const shopPhone = values.shopPhone !== undefined ? values.shopPhone : getStoredSetting('phone');
+            const shopEmail = values.shopEmail !== undefined ? values.shopEmail : getStoredSetting('email');
+            const shopGst = values.shopGst !== undefined ? values.shopGst : getStoredSetting('gst');
 
             // Update Bill Settings (Bank, Security)
-            const existingBillSettings = JSON.parse(localStorage.getItem(getNamespacedKey('bill_settings')) || '{}');
+            const existingBillSettings = JSON.parse(getStoredSetting('bill_settings', '{}'));
             const newBillSettings = { ...existingBillSettings };
 
             if (values.managerPassword !== undefined) newBillSettings.managerPassword = values.managerPassword;
@@ -418,7 +422,7 @@ const ShopSettings = () => {
                     updatedAt: new Date().toISOString(),
                     userId: auth.currentUser.uid
                 };
-                await set(ref(database, `shops/${shopId}`), shopData);
+                await set(ref(database, `firms/${shopId}/settings`), shopData);
             }
 
             message.success({ content: 'Settings Saved & Synced!', key: 'save' });
@@ -431,7 +435,7 @@ const ShopSettings = () => {
     const handleBillingSave = async (values) => {
         try {
             message.loading({ content: 'Saving preferences...', key: 'save_bill' });
-            const existingBillSettings = JSON.parse(localStorage.getItem(getNamespacedKey('bill_settings')) || '{}');
+            const existingBillSettings = JSON.parse(getStoredSetting('bill_settings', '{}'));
             const settings = {
                 ...existingBillSettings,
                 ...values // Merges all billing fields
@@ -440,7 +444,7 @@ const ShopSettings = () => {
             localStorage.setItem(getNamespacedKey('bill_settings'), JSON.stringify(settings));
 
             if (auth.currentUser && shopId) {
-                await set(ref(database, `shops/${shopId}/billSettings`), settings);
+                await set(ref(database, `firms/${shopId}/settings/billSettings`), settings);
             }
             message.success({ content: 'Billing Settings Updated!', key: 'save_bill' });
         } catch (error) {
